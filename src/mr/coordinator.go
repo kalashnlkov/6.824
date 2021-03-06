@@ -1,15 +1,26 @@
 package mr
 
-import "log"
-import "net"
-import "os"
-import "net/rpc"
-import "net/http"
+import (
+	"fmt"
+	"log"
+	"net"
+	"net/http"
+	"net/rpc"
+	"os"
+)
 
+// Job balabala
+type Job struct {
+	WorkerID int
+	Status   int
+	Filename string
+}
 
+// Coordinator is in charge of worker.
 type Coordinator struct {
 	// Your definitions here.
-
+	Jobs   []Job
+	Status bool
 }
 
 // Your code here -- RPC handlers for the worker to call.
@@ -24,6 +35,37 @@ func (c *Coordinator) Example(args *ExampleArgs, reply *ExampleReply) error {
 	return nil
 }
 
+// GetJob called by worker. suck for job.
+func (c *Coordinator) GetJob(workerID int, filename *string) error {
+	jobs := c.Jobs
+	for i := len(jobs); i >= 0; i-- {
+		fmt.Print(i)
+		job := jobs[i]
+		if job.Status == 0 {
+			*filename = job.Filename
+			job.Status = 1
+			job.WorkerID = workerID
+			return nil
+		}
+	}
+	return fmt.Errorf("no work here")
+}
+
+// HandinJob called by worker. submit for job.
+func (c *Coordinator) HandinJob(workerID int, filename *string) error {
+	jobs := c.Jobs
+	for i := len(jobs); i >= 0; i-- {
+		fmt.Print(i)
+		job := jobs[i]
+		if job.Status == 0 {
+			*filename = job.Filename
+			job.Status = 1
+			job.WorkerID = workerID
+			return nil
+		}
+	}
+	return fmt.Errorf("we received a wrong job")
+}
 
 //
 // start a thread that listens for RPCs from worker.go
@@ -46,12 +88,8 @@ func (c *Coordinator) server() {
 // if the entire job has finished.
 //
 func (c *Coordinator) Done() bool {
-	ret := false
-
+	return c.Status
 	// Your code here.
-
-
-	return ret
 }
 
 //
@@ -63,7 +101,6 @@ func MakeCoordinator(files []string, nReduce int) *Coordinator {
 	c := Coordinator{}
 
 	// Your code here.
-
 
 	c.server()
 	return &c
